@@ -11,6 +11,19 @@ const ModernNotificationStyles = () => (
       color: #0f172a !important;
     }
 
+    @media (max-width: 600px) {
+      .notification-dropdown {
+        position: fixed !important;
+        top: 75px !important;
+        left: 16px !important;
+        right: 16px !important;
+        width: calc(100vw - 32px) !important;
+        max-width: 380px !important;
+        transform: none !important;
+        box-sizing: border-box !important;
+      }
+    }
+
     .notification-header {
       display: flex;
       justify-content: space-between;
