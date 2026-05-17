@@ -3,12 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 const ModernNotificationStyles = () => (
   <style>{`
     .notification-dropdown {
-      background: #ffffff;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-      border-radius: 12px;
-      width: 380px;
-      border: 1px solid #f0f0f0;
-      color: #111827;
+      background: #ffffff !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+      border-radius: 12px !important;
+      width: 380px !important;
+      border: 1px solid #f0f0f0 !important;
+      color: #0f172a !important;
     }
 
     .notification-header {
@@ -16,19 +16,20 @@ const ModernNotificationStyles = () => (
       justify-content: space-between;
       align-items: center;
       padding: 12px 16px;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0 !important;
     }
 
     .notification-header h3 {
       margin: 0;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 700 !important;
+      color: #0f172a !important;
     }
 
     .clear-button {
       background: none;
       border: none;
-      color: #6366f1;
+      color: #6366f1 !important;
       font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
@@ -50,7 +51,7 @@ const ModernNotificationStyles = () => (
       display: flex;
       align-items: flex-start;
       padding: 12px 16px;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0 !important;
       transition: background-color 0.2s ease;
       position: relative;
     }
@@ -60,12 +61,12 @@ const ModernNotificationStyles = () => (
     }
 
     .notification-item.clickable:hover {
-      background-color: #f9fafb;
+      background-color: #f9fafb !important;
     }
 
     .notification-item:not(.read) .notification-title {
-      font-weight: 600;
-      color: #111827;
+      font-weight: 700 !important;
+      color: #0f172a !important;
     }
     
     .notification-icon {
@@ -94,20 +95,21 @@ const ModernNotificationStyles = () => (
     .notification-title {
       margin: 0;
       font-size: 0.9rem;
-      color: #374151;
+      color: #0f172a !important;
+      font-weight: 600 !important;
       line-height: 1.4;
     }
 
     .notification-body {
       margin: 2px 0 0 0;
       font-size: 0.85rem;
-      color: #6b7280;
+      color: #334155 !important;
       line-height: 1.5;
     }
 
     .notification-time {
       font-size: 0.75rem;
-      color: #9ca3af;
+      color: #64748b !important;
       margin-top: 4px;
       display: block;
     }
@@ -117,7 +119,7 @@ const ModernNotificationStyles = () => (
       top: 12px;
       right: 16px;
       background: transparent;
-      color: #9ca3af;
+      color: #9ca3af !important;
       border: none;
       padding: 0;
       font-size: 1.25rem;
@@ -132,13 +134,13 @@ const ModernNotificationStyles = () => (
     }
 
     .notification-delete-btn:hover {
-      color: #374151;
+      color: #374151 !important;
     }
 
     .no-notifications {
       text-align: center;
       padding: 40px 20px;
-      color: #6b7280;
+      color: #6b7280 !important;
     }
 
     .no-notifications-icon {
