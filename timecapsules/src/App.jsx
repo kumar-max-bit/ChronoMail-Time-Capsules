@@ -395,23 +395,12 @@ export default function App() {
     }
   }, [user?.token]); // user?.token is a primitive, so it's fine here.
 
-  // Deletes a capsule. Passed down as a prop to the Dashboard and CapsuleCard components.
   const deleteCapsule = async (id) => { // This function is passed to CapsuleCard
     if (!user) return;
     try {
-      const deletedCapsule = dashboardCapsules.find(c => c.id === id);
       await apiService.deleteCapsule(id, user.token);
       setDashboardCapsules(prev => prev.filter(c => c.id !== id));
-
-      // Optimistic local notification for instant user feedback
-      const newLocalNotif = {
-        _id: 'local_' + Date.now(),
-        title: 'Capsule Deleted',
-        body: `Your capsule "${deletedCapsule?.subject || 'Untitled'}" was deleted successfully.`,
-        read: false,
-        createdAt: new Date().toISOString()
-      };
-      setNotifications(prev => [newLocalNotif, ...prev]);
+      toast.success("Capsule deleted successfully!");
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Failed to delete the capsule.");
@@ -748,23 +737,6 @@ export default function App() {
         editingId={editingCapsuleId}
         closeModal={() => { setIsConfirmOpen(false); setFileVal(null); }} // Clear file selection when modal is closed.
         onSuccess={() => {
-          // Optimistic local notification for instant user feedback
-          const isDirect = !isScheduled;
-          const newLocalNotif = {
-            _id: 'local_' + Date.now(),
-            title: editingCapsuleId 
-              ? 'Capsule Updated!' 
-              : (isDirect ? 'Capsule Sent!' : 'Capsule Scheduled!'),
-            body: editingCapsuleId 
-              ? `Your time capsule "${subjectVal || 'Untitled'}" was updated successfully.` 
-              : (isDirect 
-                ? `Your capsule "${subjectVal || 'Untitled'}" has been dispatched to recipients.`
-                : `Your capsule "${subjectVal || 'Untitled'}" is now securely scheduled.`),
-            read: false,
-            createdAt: new Date().toISOString()
-          };
-          setNotifications(prev => [newLocalNotif, ...prev]);
-
           // On successful submission, clear the entire form and the saved draft.
           setRecipientsVal(''); setSubjectVal(''); setMessageVal(''); setDateVal(''); setFileVal(null); setIsRecurringVal(false); setCategoryVal('General'); setIsPublicVal(false); setIsDeadMansSwitchVal(false); setIsPhysicalVal(false); setPhysicalAddressVal('');
           localStorage.removeItem('tcDraft');
@@ -773,6 +745,7 @@ export default function App() {
           // Instant Sync: Wait a tiny bit for the DB to settle, then fetch.
           setTimeout(() => {
             fetchCapsules();
+            fetchNotifications(user?.token);
             toast.success(editingCapsuleId ? "Capsule updated!" : "Capsule secured and scheduled!");
           }, 300);
         }}
