@@ -83,7 +83,7 @@ export default function AuthModal({
                 )}
               </label>
               <div className="input-wrapper">
-                <input id="password" type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required placeholder="••••••••" />
+                <input id="password" type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required placeholder={isRegister ? "Create Password" : "••••••••"} />
               </div>
             </div>
             <button type="submit" className="btn btn-primary full-width mt-4" disabled={isAuthLoading}>
