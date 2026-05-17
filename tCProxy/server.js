@@ -1693,13 +1693,15 @@ async function sendEmail(capsule) {
       await logActivity('system', `Physical letter dispatch triggered for capsule ${capsule._id}.`);
     }
 
-    // Embed the tracking pixel in the email body.
-    htmlBody += `<img src="${process.env.API_URL || 'http://localhost:3000'}/api/track/${capsule._id}" width="1" height="1" alt="" style="display:none;" />`;
+    // Embed the tracking pixel in the email body (only if a valid non-localhost API_URL is provided)
+    if (process.env.API_URL && !process.env.API_URL.includes('localhost')) {
+      htmlBody += `<img src="${process.env.API_URL}/api/track/${capsule._id}" width="1" height="1" alt="" style="display:none;" />`;
+    }
 
-    // Add an unsubscribe link if the recipient is not the sender.
-    if (recipient.toLowerCase() !== senderEmail.toLowerCase()) {
+    // Add an unsubscribe link if the recipient is not the sender and a valid API_URL is available
+    if (recipient.toLowerCase() !== senderEmail.toLowerCase() && process.env.API_URL && !process.env.API_URL.includes('localhost')) {
       const unsubscribeToken = jwt.sign({ userId: user._id, recipientEmail: recipient }, process.env.JWT_SECRET, { expiresIn: '1y' });
-      const unsubscribeUrl = `${process.env.API_URL || 'http://localhost:3000'}/api/unsubscribe/${unsubscribeToken}`;
+      const unsubscribeUrl = `${process.env.API_URL}/api/unsubscribe/${unsubscribeToken}`;
 
       htmlBody += `<br><br><hr><p style="font-size: 12px; color: #888; text-align: center;">
         You received this message because ${senderName} scheduled it for you using ChronoMail. 
