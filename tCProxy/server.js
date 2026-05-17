@@ -1550,8 +1550,9 @@ async function sendEmailViaResend({ to, subject, html, replyTo, from, attachment
     htmlContent: html,
   };
 
-  // Set reply-to to the official ChronoMail sender email to protect the creator's personal email privacy
-  bodyPayload.replyTo = { email: senderEmailAddress };
+  if (replyTo) {
+    bodyPayload.replyTo = { email: replyTo };
+  }
 
   if (formattedAttachments.length > 0) {
     bodyPayload.attachment = formattedAttachments;
