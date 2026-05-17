@@ -174,8 +174,13 @@ export default function App() {
       prev.map(n => (ids.includes(n._id)) ? { ...n, read: true } : n)
     );
 
+    // Filter out local notifications from the backend database request to avoid MongoDB CastErrors
+    const databaseIds = ids.filter(id => typeof id === 'string' && !id.startsWith('local_'));
+
     try {
-      await apiService.request('/api/notifications/mark-read', 'POST', { ids }, user.token);
+      if (databaseIds.length > 0) {
+        await apiService.request('/api/notifications/mark-read', 'POST', { ids: databaseIds }, user.token);
+      }
     } catch (error) {
       // If the API call fails, revert the UI to its original state.
       console.error("Failed to mark notifications as read, reverting UI.", error);
@@ -192,7 +197,10 @@ export default function App() {
     setNotifications(prev => prev.filter(n => n._id !== id));
 
     try {
-      await apiService.request(`/api/notifications/${id}`, 'DELETE', null, user.token);
+      // Skip backend request if deleting a local notification
+      if (typeof id === 'string' && !id.startsWith('local_')) {
+        await apiService.request(`/api/notifications/${id}`, 'DELETE', null, user.token);
+      }
     } catch (error) {
       // Revert on failure.
       console.error("Failed to delete notification:", error);
