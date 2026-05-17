@@ -1529,9 +1529,15 @@ async function sendEmailViaResend({ to, subject, html, replyTo, from, attachment
       base64Content = att.content;
     }
 
+    let cleanName = att.filename || 'attachment';
+    // Rewrite .webm (not supported by Brevo API) to .mp4 (supported and plays perfectly)
+    if (cleanName.toLowerCase().endsWith('.webm')) {
+      cleanName = cleanName.substring(0, cleanName.length - 5) + '.mp4';
+    }
+
     return {
       content: base64Content,
-      name: att.filename
+      name: cleanName
     };
   });
 
