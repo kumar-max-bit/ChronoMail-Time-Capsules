@@ -1497,18 +1497,28 @@ app.delete('/api/admin/capsules/:id', auth, adminAuth, async (req, res) => {
 // Handles physical delivery, email dispatch, tracking, and the Dead Man's Switch
 // ============================================================================
 
-// Helper to send emails via Resend's REST API using HTTPS over port 443
-async function sendEmailViaResend({ to, subject, html, replyTo, attachments = [] }) {
-  const apiKey = process.env.RESEND_API_KEY;
+// Helper to send emails via Brevo's REST API using HTTPS over port 443
+async function sendEmailViaResend({ to, subject, html, replyTo, from, attachments = [] }) {
+  const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
-    throw new Error('RESEND_API_KEY environment variable is missing.');
+    throw new Error('BREVO_API_KEY environment variable is missing.');
   }
 
-  // Resend onboarding domain requires sending FROM onboarding@resend.dev on free accounts.
-  // This is completely free and works instantly for sending to your registered Resend email address!
-  const fromAddress = 'ChronoMail <onboarding@resend.dev>';
+  // Extract display name from 'from', default to 'ChronoMail'
+  let fromName = 'ChronoMail';
+  if (from) {
+    const match = from.match(/^"([^"]+)"/);
+    if (match && match[1]) {
+      fromName = match[1];
+    } else {
+      const cleanDisplayName = from.split('<')[0].trim().replace(/"/g, '');
+      if (cleanDisplayName) {
+        fromName = cleanDisplayName;
+      }
+    }
+  }
 
-  // Format attachments for Resend
+  // Format attachments for Brevo (Brevo accepts base64 content and name)
   const formattedAttachments = attachments.map(att => {
     let base64Content = '';
     if (Buffer.isBuffer(att.content)) {
@@ -1520,42 +1530,47 @@ async function sendEmailViaResend({ to, subject, html, replyTo, attachments = []
     }
 
     return {
-      filename: att.filename,
-      content: base64Content
+      content: base64Content,
+      name: att.filename
     };
   });
 
   const bodyPayload = {
-    from: fromAddress,
-    to: Array.isArray(to) ? to : [to],
+    sender: { name: fromName, email: 'chronomail67@gmail.com' },
+    to: (Array.isArray(to) ? to : [to]).map(email => ({ email })),
     subject: subject || 'A ChronoMail Message',
-    html: html,
+    htmlContent: html,
   };
 
-  // Only add replyTo if specified
   if (replyTo) {
-    bodyPayload.reply_to = replyTo;
+    bodyPayload.replyTo = { email: replyTo };
   }
 
   if (formattedAttachments.length > 0) {
-    bodyPayload.attachments = formattedAttachments;
+    bodyPayload.attachment = formattedAttachments;
   }
 
-  const res = await fetch('https://api.resend.com/emails', {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'accept': 'application/json',
+      'api-key': apiKey,
+      'content-type': 'application/json'
     },
     body: JSON.stringify(bodyPayload)
   });
 
-  const responseData = await res.json();
+  const responseText = await res.text();
+  let responseData = {};
+  try {
+    responseData = JSON.parse(responseText);
+  } catch (e) {}
+
   if (!res.ok) {
-    throw new Error(responseData.message || `Resend API returned status ${res.status}`);
+    throw new Error(responseData.message || `Brevo API returned status ${res.status}`);
   }
 
-  return { messageId: responseData.id };
+  return { messageId: responseData.messageId };
 }
 
 let transporter;
@@ -1700,6 +1715,7 @@ async function sendEmail(capsule) {
 
     try {
       const info = await sendEmailViaResend({
+        from: mailOptions.from,
         to: recipient,
         replyTo: senderEmail,
         subject: capsule.subject || 'A ChronoMail Message',
