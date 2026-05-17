@@ -109,8 +109,8 @@ app.post('/api/contact', async (req, res) => {
     }
 
     // Sanitize all user-supplied fields before embedding in HTML email (XSS prevention).
-    const safeName    = DOMPurify.sanitize(String(name).slice(0, 200));
-    const safeEmail   = String(email).slice(0, 254).replace(/[<>"']/g, '');
+    const safeName = DOMPurify.sanitize(String(name).slice(0, 200));
+    const safeEmail = String(email).slice(0, 254).replace(/[<>"']/g, '');
     const safeMessage = DOMPurify.sanitize(String(message).slice(0, 5000));
 
     if (!safeName || !safeEmail || !safeMessage) {
@@ -347,7 +347,7 @@ async function sendNotificationToUser(userId, payload) {
       if (!result.success) {
         const error = result.error.code;
         if (error === 'messaging/invalid-registration-token' ||
-            error === 'messaging/registration-token-not-registered') {
+          error === 'messaging/registration-token-not-registered') {
           tokensToRemove.push(user.fcmTokens[index]);
         }
       }
@@ -375,7 +375,7 @@ const auth = async (req, res, next) => {
   try {
     // Verify the token's signature and get the payload (which contains the user ID).
     const verified = jwt.verify(token, process.env.JWT_SECRET);
-    
+
     // Fetch the full user document from the database. This is more secure than just trusting the JWT payload.
     const userDoc = await User.findById(verified.id);
     if (!userDoc) {
@@ -429,9 +429,9 @@ app.post('/api/save-fcm-token', auth, async (req, res) => {
       const notificationCount = await Notification.countDocuments({ userId: req.user._id });
       if (notificationCount === 0) {
         await sendNotificationToUser(user._id, {
-            title: 'Welcome to ChronoMail! 🎉',
-            body: 'We are excited to have you. Start by creating your first time capsule.',
-            link: '/#create'
+          title: 'Welcome to ChronoMail! 🎉',
+          body: 'We are excited to have you. Start by creating your first time capsule.',
+          link: '/#create'
         });
       }
     }
@@ -527,7 +527,7 @@ app.post('/api/register', authLimiter, async (req, res) => {
     if (password.length > 128) {
       return res.status(400).json({ error: 'Password must be less than 128 characters.' });
     }
-    
+
     // Check if a verified user already exists
     const existingVerifiedUser = await User.findOne({ email, isVerified: true });
     if (existingVerifiedUser) {
@@ -566,9 +566,9 @@ app.post('/api/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    
+
     const settings = await SystemSettings.findOne();
-    
+
     if (user && !user.isAdmin && settings && settings.maintenanceMode) {
       return res.status(503).json({ error: 'System is currently in maintenance mode. Please try again later.' });
     }
@@ -577,7 +577,7 @@ app.post('/api/login', authLimiter, async (req, res) => {
       await logActivity('security', `Failed login attempt for unknown user: ${email} (IP: ${req.ip})`);
       return res.status(400).json({ error: 'Invalid email or password' });
     }
-    
+
     // Check if email verification is required by system settings.
     const requireVerification = settings ? settings.requireEmailVerification !== false : true;
     if (requireVerification && !user.isVerified) {
@@ -590,7 +590,7 @@ app.post('/api/login', authLimiter, async (req, res) => {
       await logActivity('security', `Failed login attempt for user: ${email} (IP: ${req.ip})`);
       return res.status(400).json({ error: 'Invalid email or password' });
     }
-    
+
     user.lastLogin = new Date();
     await user.save();
 
@@ -741,7 +741,7 @@ app.post('/api/reset-password', authLimiter, async (req, res) => {
     user.otpExpires = undefined;
     user.isVerified = true; // Implicitly verify their email since they passed the OTP check
     await user.save();
-    
+
     await logActivity('security', `Password successfully reset for: ${email} (IP: ${req.ip})`);
 
     res.json({ success: true, message: 'Password has been reset successfully.' });
@@ -777,7 +777,7 @@ app.post('/api/firebase-auth', authLimiter, async (req, res) => {
       // We still create a password for them, even though they use Google, for consistency and potential future password login.
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(randomPassword, salt);
-      
+
       user = new User({
         name: name || email.split('@')[0],
         email: email,
@@ -800,7 +800,7 @@ app.post('/api/firebase-auth', authLimiter, async (req, res) => {
 
     // Create our app's own standard JWT token for the session.
     const jwtToken = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    
+
     res.json({ token: jwtToken, email: user.email, name: user.name, profilePhoto: user.profilePhoto, isAdmin: user.isAdmin });
   } catch (err) {
     console.error('Firebase auth error:', err);
@@ -816,7 +816,7 @@ app.get('/api/capsules', auth, async (req, res) => {
   try {
     // Fetch user's capsules, excluding the large file data buffer to save bandwidth
     const capsules = await Capsule.find({ userId: req.user._id }).select('-fileData').sort({ date: 1 });
-    
+
     // Map the capsules to a format suitable for the frontend dashboard. Note we don't send the encrypted message here.
     const decryptedCapsules = capsules.map(c => ({
       id: c._id,
@@ -831,7 +831,7 @@ app.get('/api/capsules', auth, async (req, res) => {
       isPhysical: c.isPhysical,
       physicalAddress: c.physicalAddress
     }));
-    
+
     res.json(decryptedCapsules);
   } catch (err) {
     console.error(err);
@@ -852,7 +852,7 @@ app.post('/api/capsules', auth, async (req, res) => {
     if (isNaN(capsuleDate.getTime())) {
       return res.status(400).json({ error: 'Invalid date provided.' });
     }
-    
+
     // Sanitize the HTML message from the rich text editor before encrypting it.
     const encrypted = encrypt(DOMPurify.sanitize(message));
     const settings = await SystemSettings.findOne();
@@ -869,7 +869,7 @@ app.post('/api/capsules', auth, async (req, res) => {
     if (userCapsulesCount >= maxCapsules) {
       return res.status(400).json({ error: `You have reached the maximum limit of ${maxCapsules} capsules per user.` });
     }
-    
+
     let fileData = null, fileName = null, fileMimeType = null, fileIv = null, filePath = null;
     let tempRawFile = null;
     let uploadFilename = null;
@@ -877,7 +877,7 @@ app.post('/api/capsules', auth, async (req, res) => {
     // Handle file attachment upload.
     // Allowed MIME types for capsule attachments.
     const ALLOWED_MIME_PREFIXES = ['image/', 'video/', 'audio/', 'text/'];
-    const ALLOWED_MIME_EXACT   = [
+    const ALLOWED_MIME_EXACT = [
       'application/pdf',
       'application/zip',
       'application/x-zip-compressed',
@@ -909,7 +909,7 @@ app.post('/api/capsules', auth, async (req, res) => {
       const encryptedFile = encryptBuffer(upload.data);
       fileIv = encryptedFile.iv;
       fileMimeType = upload.mimetype;
-      
+
       uploadFilename = `${Date.now()}-${Math.random().toString(36).substring(7)}-${fileName.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       filePath = uploadFilename;
       encryptedDataToUpload = encryptedFile.encryptedData;
@@ -918,7 +918,7 @@ app.post('/api/capsules', auth, async (req, res) => {
     // Create a new Mongoose document for the capsule.
     const capsule = new Capsule({
       userId: req.user._id,
-      recipients, 
+      recipients,
       subject,
       category: category || 'General',
       message: encrypted.encryptedData,
@@ -927,8 +927,8 @@ app.post('/api/capsules', auth, async (req, res) => {
       date: capsuleDate,
       recurring: recurring || 'none',
       isDirect,
-      fileName, 
-      fileData, 
+      fileName,
+      fileData,
       fileMimeType,
       filePath,
       fileIv,
@@ -939,7 +939,7 @@ app.post('/api/capsules', auth, async (req, res) => {
       physicalAddress: physicalAddress || '',
       fileSize: fileData ? fileData.length : 0
     });
-    
+
     // Store raw file in memory just for this execution to avoid downloading it from Supabase again
     if (tempRawFile) {
       capsule._tempRawFile = tempRawFile;
@@ -992,7 +992,7 @@ app.delete('/api/capsules/:id', auth, async (req, res) => {
   try {
     const capsule = await Capsule.findOne({ _id: req.params.id, userId: req.user._id });
     if (!capsule) {
-        return res.status(404).json({ error: 'Capsule not found or user not authorized to delete.' });
+      return res.status(404).json({ error: 'Capsule not found or user not authorized to delete.' });
     }
     const capsuleSubject = capsule.subject;
     const userId = capsule.userId;
@@ -1100,17 +1100,17 @@ app.put('/api/capsules/:id', auth, async (req, res) => {
     if (req.files && req.files.file) {
       const upload = Array.isArray(req.files.file) ? req.files.file[0] : req.files.file;
       if (upload.size > maxMB * 1024 * 1024) return res.status(400).json({ error: `Attachment file size cannot exceed ${maxMB}MB.` });
-      
+
       if (capsule.filePath) {
-         oldFilePathToDelete = capsule.filePath;
+        oldFilePathToDelete = capsule.filePath;
       }
-      
+
       const encryptedFile = encryptBuffer(upload.data);
       capsule.fileIv = encryptedFile.iv;
       capsule.fileName = upload.name;
       capsule.fileMimeType = upload.mimetype;
       capsule.fileSize = upload.data.length;
-      
+
       uploadFilename = `${Date.now()}-${Math.random().toString(36).substring(7)}-${upload.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
       capsule.filePath = uploadFilename;
       capsule.fileData = undefined;
@@ -1133,7 +1133,7 @@ app.put('/api/capsules/:id', auth, async (req, res) => {
     (async () => {
       try {
         if (oldFilePathToDelete) {
-           await supabase.storage.from('attachments').remove([oldFilePathToDelete]);
+          await supabase.storage.from('attachments').remove([oldFilePathToDelete]);
         }
         if (encryptedDataToUpload && uploadFilename) {
           const { error } = await supabase.storage.from('attachments').upload(uploadFilename, encryptedDataToUpload, {
@@ -1160,7 +1160,7 @@ app.post('/api/user/photo', auth, async (req, res) => {
     if (!req.files || !req.files.photo) {
       return res.status(400).json({ error: 'No photo uploaded' });
     }
-    
+
     const photo = req.files.photo;
 
     // --- Strict Image Validation ---
@@ -1177,7 +1177,7 @@ app.post('/api/user/photo', auth, async (req, res) => {
     // Convert the image to a Base64 string to store it directly in the user document.
     const base64Data = photo.data.toString('base64');
     const profilePhoto = `data:${photo.mimetype};base64,${base64Data}`;
-    
+
     await User.findByIdAndUpdate(req.user._id, { profilePhoto });
     await logActivity('auth', `Profile photo updated by ${req.userEmail}.`);
     res.json({ success: true, profilePhoto });
@@ -1251,7 +1251,7 @@ app.get('/api/public-gallery', async (req, res) => {
   try {
     // Only fetch capsules that are marked public AND have already been sent to the future
     const publicCapsules = await Capsule.find({ isPublic: true, sent: true }).select('-fileData -recipients -userId').sort({ date: -1 }).limit(50);
-    
+
     const decrypted = publicCapsules.map(c => ({
       id: c._id,
       subject: c.subject,
@@ -1259,7 +1259,7 @@ app.get('/api/public-gallery', async (req, res) => {
       date: c.date,
       message: decrypt(c.message, c.iv) // We decrypt it here safely since it's anonymous
     }));
-    
+
     res.json(decrypted);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch public gallery' });
@@ -1304,17 +1304,17 @@ app.post('/api/admin/promote', auth, authLimiter, async (req, res) => {
     if (existingAdmins >= maxAdmins) {
       const currentUser = req.user; // Already have the user doc from auth middleware
       if (!currentUser || !currentUser.isAdmin) {
-         return res.status(403).json({ error: `The maximum limit of ${maxAdmins} administrator(s) has been reached. Further promotions are locked.` });
+        return res.status(403).json({ error: `The maximum limit of ${maxAdmins} administrator(s) has been reached. Further promotions are locked.` });
       }
     }
 
     const { adminKey } = req.body;
     const expectedKey = process.env.ADMIN_SECRET_KEY;
-    
+
     if (adminKey !== expectedKey) {
       return res.status(401).json({ error: 'Invalid admin key' });
     }
-    
+
     const user = await User.findByIdAndUpdate(req.user._id, { isAdmin: true }, { new: true });
     await logActivity('security', `${req.userEmail} promoted to Admin status using secret key.`);
     const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -1338,12 +1338,14 @@ app.get('/api/admin/stats', auth, adminAuth, async (req, res) => {
 
     const sentStats = await Capsule.aggregate([
       { $match: { sent: true } },
-      { $group: {
+      {
+        $group: {
           _id: null,
           successfulDeliveries: { $sum: { $cond: [{ $eq: ["$deliveryStatus", "sent"] }, 1, 0] } },
           failedDeliveries: { $sum: { $cond: [{ $eq: ["$deliveryStatus", "failed"] }, 1, 0] } },
           openedCount: { $sum: { $cond: ["$opened", 1, 0] } }
-      }}
+        }
+      }
     ]);
 
     let deliverySuccessRate = 0;
@@ -1369,11 +1371,11 @@ app.get('/api/admin/activity', auth, adminAuth, async (req, res) => {
     const authLogs = await ActivityLog.find({ type: 'auth' }).sort({ createdAt: -1 }).limit(5);
     const capsuleLogs = await ActivityLog.find({ type: 'capsule' }).sort({ createdAt: -1 }).limit(5);
     const securityLogs = await ActivityLog.find({ type: 'security' }).sort({ createdAt: -1 }).limit(5);
-    
+
     // Combine and sort all logs by date to get a chronological feed.
     const logs = [...systemLogs, ...authLogs, ...capsuleLogs, ...securityLogs];
     logs.sort((a, b) => b.createdAt - a.createdAt);
-    
+
     res.json(logs);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch activity logs' });
@@ -1430,7 +1432,7 @@ app.put('/api/admin/settings', auth, adminAuth, async (req, res) => {
     const { allowNewRegistrations, maxAttachmentSizeMB, maintenanceMode, requireEmailVerification, maxCapsulesPerUser, maxRecipientsPerCapsule, maxAdmins } = req.body;
     let settings = await SystemSettings.findOne();
     if (!settings) settings = new SystemSettings();
-    
+
     if (allowNewRegistrations !== undefined) settings.allowNewRegistrations = allowNewRegistrations;
     if (maxAttachmentSizeMB !== undefined) settings.maxAttachmentSizeMB = Number(maxAttachmentSizeMB);
     if (maintenanceMode !== undefined) settings.maintenanceMode = maintenanceMode;
@@ -1438,7 +1440,7 @@ app.put('/api/admin/settings', auth, adminAuth, async (req, res) => {
     if (maxCapsulesPerUser !== undefined) settings.maxCapsulesPerUser = Number(maxCapsulesPerUser);
     if (maxRecipientsPerCapsule !== undefined) settings.maxRecipientsPerCapsule = Number(maxRecipientsPerCapsule);
     if (maxAdmins !== undefined) settings.maxAdmins = Number(maxAdmins);
-    
+
     await settings.save();
     await logActivity('system', `System settings updated by Admin (${req.userEmail}).`);
     res.json({ success: true, settings });
@@ -1455,11 +1457,11 @@ app.delete('/api/admin/users/:id', auth, adminAuth, async (req, res) => {
     }
     const deletedUser = await User.findById(req.params.id);
     await User.findByIdAndDelete(req.params.id);
-    
+
     // Delete all user attachments from Supabase
     const userCapsules = await Capsule.find({ userId: req.params.id });
     const filePaths = userCapsules.map(c => c.filePath).filter(Boolean);
-    
+
     // Also delete any capsules belonging to this user
     await Capsule.deleteMany({ userId: req.params.id });
     await logActivity('system', `Admin (${req.userEmail}) deleted user account: ${deletedUser?.email || req.params.id}`);
@@ -1659,7 +1661,7 @@ async function sendEmail(capsule) {
 
     const decryptedMessage = decrypt(capsule.message, capsule.iv);
     let htmlBody = decryptedMessage;
-    
+
     // This is a placeholder for a premium feature.
     if (capsule.isPhysical && capsule.physicalAddress) {
       console.log(`\n💌 [PREMIUM FEATURE] Preparing Physical Letter...`);
@@ -1675,7 +1677,7 @@ async function sendEmail(capsule) {
     if (recipient.toLowerCase() !== senderEmail.toLowerCase()) {
       const unsubscribeToken = jwt.sign({ userId: user._id, recipientEmail: recipient }, process.env.JWT_SECRET, { expiresIn: '1y' });
       const unsubscribeUrl = `${process.env.API_URL || 'http://localhost:3000'}/api/unsubscribe/${unsubscribeToken}`;
-      
+
       htmlBody += `<br><br><hr><p style="font-size: 12px; color: #888; text-align: center;">
         You received this message because ${senderName} scheduled it for you using ChronoMail. 
         <a href="${unsubscribeUrl}" target="_blank">Unsubscribe</a> to stop receiving future messages from this user.
@@ -1719,10 +1721,10 @@ async function sendEmail(capsule) {
     capsule.deliveryStatus = 'sent';
     // Send notification to the user who created the capsule
     await sendNotificationToUser(capsule.userId, {
-        title: 'Your Time Capsule was Delivered!',
-        body: `Your capsule "${capsule.subject}" was successfully sent to recipients.`,
-        link: '/#dashboard',
-        type: 'CAPSULE_SENT' // Add type for client to handle dashboard refresh
+      title: 'Your Time Capsule was Delivered!',
+      body: `Your capsule "${capsule.subject}" was successfully sent to recipients.`,
+      link: '/#dashboard',
+      type: 'CAPSULE_SENT' // Add type for client to handle dashboard refresh
     });
   } else if (hasFail) {
     capsule.deliveryStatus = 'failed';
@@ -1733,10 +1735,10 @@ async function sendEmail(capsule) {
 cron.schedule('* * * * *', async () => {
   try {
     const now = new Date();
-    
+
     // 1. Get standard scheduled capsules that are due
     const standardCapsules = await Capsule.find({ isScheduled: true, sent: false, isDeadMansSwitch: { $ne: true }, date: { $lte: now } });
-    
+
     // 2. Process Dead Man's Switch (1 Year of Inactivity)
     // Find users who haven't logged in for a year and get their pending Dead Man's Switch capsules.
     const oneYearAgo = new Date();
@@ -1745,7 +1747,7 @@ cron.schedule('* * * * *', async () => {
     const dmsCapsules = await Capsule.find({ isDeadMansSwitch: true, sent: false, userId: { $in: inactiveUsers.map(u => u._id) } });
 
     const capsulesToProcess = [...standardCapsules, ...dmsCapsules];
-    
+
     if (capsulesToProcess.length > 0) {
       console.log(`⏰ Cron job started. Found ${capsulesToProcess.length} pending capsule(s).`);
 
@@ -1754,7 +1756,7 @@ cron.schedule('* * * * *', async () => {
       const batchSize = 20;
       for (let i = 0; i < capsulesToProcess.length; i += batchSize) {
         const batch = capsulesToProcess.slice(i, i + batchSize);
-        
+
         await Promise.all(batch.map(async (capsule) => {
           try {
             await sendEmail(capsule);
