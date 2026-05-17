@@ -1535,8 +1535,10 @@ async function sendEmailViaResend({ to, subject, html, replyTo, from, attachment
     };
   });
 
+  const senderEmailAddress = (process.env.EMAIL_USER || 'Chronomail96@gmail.com').trim().toLowerCase();
+
   const bodyPayload = {
-    sender: { name: fromName, email: 'chronomail67@gmail.com' },
+    sender: { name: fromName, email: senderEmailAddress },
     to: (Array.isArray(to) ? to : [to]).map(email => ({ email })),
     subject: subject || 'A ChronoMail Message',
     htmlContent: html,
