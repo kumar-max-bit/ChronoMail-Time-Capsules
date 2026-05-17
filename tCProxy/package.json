@@ -1,0 +1,22 @@
+{
+  "type": "commonjs",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dompurify": "^3.4.2",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.5.2",
+    "express-rate-limit": "^8.5.1",
+    "firebase-admin": "^13.9.0",
+    "jsdom": "^29.1.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.6.1",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.7"
+  },
+  "overrides": {
+    "@tootallnate/once": "^3.0.1"
+  }
+}

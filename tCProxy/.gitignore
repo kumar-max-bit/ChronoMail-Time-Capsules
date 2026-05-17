@@ -1,0 +1,23 @@
+# Environment Variables & Secrets — NEVER commit these
+.env
+.env.local
+.env.production
+.env.*
+
+# Firebase Service Account Keys
+servicAccountKey.json
+serviceAccountKey.json
+firebase-credentials.json
+*.json.bak
+
+# Dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

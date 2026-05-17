@@ -1,0 +1,62 @@
+.gallerySection {
+  margin-top: 20px;
+}
+
+.header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.badge {
+  display: inline-block;
+  margin-bottom: 15px;
+}
+
+.title {
+  font-size: 2rem;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: var(--text-secondary, #64748b);
+}
+
+.loadingText {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+
+.capsuleGrid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.capsuleCard {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.categoryBadge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.cardFooter {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+  font-size: 0.8rem;
+  color: #94a3b8;
+}

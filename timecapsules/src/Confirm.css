@@ -1,0 +1,30 @@
+@layer components {
+  .modal {
+    position: fixed;
+    top: 0; /* Changed from -5vh to allow proper centering */
+    bottom: 0;
+    right: 0;
+    left: 0;
+    margin: auto;
+    z-index: 99;
+    width: 80vw;
+    max-width: 440px; /* Added for consistency with other modals */
+    height: fit-content; /* Let height be determined by content */
+    pointer-events: none;
+  }
+  .contents {
+    min-width: 240px;
+    border-radius: var(--radius-lg, 24px); /* Using theme variables */
+    padding: 32px; /* Using theme variables */
+    background: var(--bg-card, white); /* Using theme variables */
+    color: var(--text-main, #1e293b); /* Added to prevent text from inheriting white color */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    pointer-events: auto;
+    box-shadow: var(--shadow-lg); /* Using theme variables */
+  }
+  .contents h2, .contents p { text-align: center; }
+  .actions { margin-top: 32px; display: flex; justify-content: flex-end; gap: 12px; }
+  .error { color: var(--error, red); font-weight: bolder; font-size: larger; }
+}

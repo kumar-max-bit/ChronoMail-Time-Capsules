@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Production build artifacts
+dist/
+**/dist/
+
+# Local environment variables
+.env
+.env*.local
+**/.env
+**/.env*.local
+
+# Editor configs
+.vscode/
+.idea/
+
+# Media and logs
+*.log
+*.webm
+*.mp4
+*.mp3
+.DS_Store
