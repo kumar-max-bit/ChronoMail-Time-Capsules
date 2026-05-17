@@ -135,7 +135,12 @@ app.post('/api/contact', async (req, res) => {
              </div>`
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendEmailViaResend({
+      to: adminEmail,
+      replyTo: safeEmail,
+      subject: `New Contact Form Submission from ${safeName}`,
+      html: mailOptions.html
+    });
     await logActivity('system', `New contact form submission from ${safeEmail}.`);
 
     res.json({ success: true, message: 'Your message has been sent successfully!' });
@@ -1490,6 +1495,67 @@ app.delete('/api/admin/capsules/:id', auth, adminAuth, async (req, res) => {
 // Handles physical delivery, email dispatch, tracking, and the Dead Man's Switch
 // ============================================================================
 
+// Helper to send emails via Resend's REST API using HTTPS over port 443
+async function sendEmailViaResend({ to, subject, html, replyTo, attachments = [] }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY environment variable is missing.');
+  }
+
+  // Resend onboarding domain requires sending FROM onboarding@resend.dev on free accounts.
+  // This is completely free and works instantly for sending to your registered Resend email address!
+  const fromAddress = 'ChronoMail <onboarding@resend.dev>';
+
+  // Format attachments for Resend
+  const formattedAttachments = attachments.map(att => {
+    let base64Content = '';
+    if (Buffer.isBuffer(att.content)) {
+      base64Content = att.content.toString('base64');
+    } else if (typeof att.content === 'string') {
+      base64Content = Buffer.from(att.content).toString('base64');
+    } else {
+      base64Content = att.content;
+    }
+
+    return {
+      filename: att.filename,
+      content: base64Content
+    };
+  });
+
+  const bodyPayload = {
+    from: fromAddress,
+    to: Array.isArray(to) ? to : [to],
+    subject: subject || 'A ChronoMail Message',
+    html: html,
+  };
+
+  // Only add replyTo if specified
+  if (replyTo) {
+    bodyPayload.reply_to = replyTo;
+  }
+
+  if (formattedAttachments.length > 0) {
+    bodyPayload.attachments = formattedAttachments;
+  }
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify(bodyPayload)
+  });
+
+  const responseData = await res.json();
+  if (!res.ok) {
+    throw new Error(responseData.message || `Resend API returned status ${res.status}`);
+  }
+
+  return { messageId: responseData.id };
+}
+
 let transporter;
 
 async function initializeServer() {
@@ -1522,35 +1588,33 @@ async function initializeServer() {
 
 // Helper function to send the OTP email during registration.
 async function sendVerificationEmail(email, otp) {
-  const mailOptions = {
-    from: `"ChronoMail" <${process.env.EMAIL_USER || 'noreply@chronomail.io'}>`,
-    to: email,
-    subject: 'Your ChronoMail Verification Code',
-    html: `<div style="font-family: sans-serif; text-align: center; padding: 20px;">
+  const htmlContent = `<div style="font-family: sans-serif; text-align: center; padding: 20px;">
              <h2>Welcome to ChronoMail!</h2>
              <p>Your verification code is:</p>
              <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px; border: 1px solid #ddd; padding: 10px; display: inline-block;">${otp}</p>
              <p>This code will expire in 10 minutes.</p>
-           </div>`
-  };
-  const info = await transporter.sendMail(mailOptions);
+           </div>`;
+  const info = await sendEmailViaResend({
+    to: email,
+    subject: 'Your ChronoMail Verification Code',
+    html: htmlContent
+  });
   console.log(`✅ Verification email sent to ${email}. Message ID: ${info.messageId}`);
 }
 
 // Helper function to send the OTP email for password resets.
 async function sendPasswordResetEmail(email, otp) {
-  const mailOptions = {
-    from: `"ChronoMail" <${process.env.EMAIL_USER || 'noreply@chronomail.io'}>`,
-    to: email,
-    subject: 'ChronoMail Password Reset Code',
-    html: `<div style="font-family: sans-serif; text-align: center; padding: 20px;">
+  const htmlContent = `<div style="font-family: sans-serif; text-align: center; padding: 20px;">
              <h2>Password Reset Request</h2>
              <p>Your password reset code is:</p>
              <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px; border: 1px solid #ddd; padding: 10px; display: inline-block;">${otp}</p>
              <p>This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
-           </div>`
-  };
-  await transporter.sendMail(mailOptions);
+           </div>`;
+  await sendEmailViaResend({
+    to: email,
+    subject: 'ChronoMail Password Reset Code',
+    html: htmlContent
+  });
   console.log(`✅ Password reset email sent to ${email}.`);
 }
 
@@ -1633,7 +1697,16 @@ async function sendEmail(capsule) {
     };
 
     try {
-      const info = await transporter.sendMail(mailOptions);
+      const info = await sendEmailViaResend({
+        to: recipient,
+        replyTo: senderEmail,
+        subject: capsule.subject || 'A ChronoMail Message',
+        html: htmlBody,
+        attachments: decryptedFileData ? [{
+          filename: capsule.fileName,
+          content: decryptedFileData
+        }] : []
+      });
       console.log(`✅ Email for capsule ${capsule._id} sent to: ${recipient}. Message ID: ${info.messageId}`);
       hasSuccess = true;
     } catch (err) {
