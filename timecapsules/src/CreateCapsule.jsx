@@ -450,7 +450,11 @@ export default function CreateCapsule({
                 value={dateVal || ''}
                 onChange={(e) => setDateVal(e.target.value)}
                 required
-                min={new Date().toISOString().slice(0, 16)}
+                min={(() => {
+                  const d = new Date();
+                  const offset = d.getTimezoneOffset() * 60000;
+                  return new Date(d - offset).toISOString().slice(0, 16);
+                })()}
               />
             </div>
           )}

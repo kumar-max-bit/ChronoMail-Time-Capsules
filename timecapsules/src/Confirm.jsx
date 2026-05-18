@@ -46,7 +46,14 @@ export default function Confirm({
       formData.append("isDeadMansSwitch", isDeadMansSwitch || false);
       formData.append("isPhysical", isPhysical || false);
       if (isPhysical) formData.append("physicalAddress", physicalAddress || '');
-      if (isScheduled) formData.append("date", date);
+      if (isScheduled) {
+        const parsedDate = new Date(date);
+        if (!isNaN(parsedDate.getTime())) {
+          formData.append("date", parsedDate.toISOString());
+        } else {
+          formData.append("date", date);
+        }
+      }
 
       if (file) {
         formData.append("file", file);
@@ -62,7 +69,7 @@ export default function Confirm({
       setSuccess(true);
     } catch (error) {
       console.error("Error submitting time capsule:", error);
-      toast.error("Failed to submit to the server. Please check your connection.");
+      toast.error(error.message || "Failed to submit to the server. Please check your connection.");
     } finally {
       setIsLoading(false);
     }
